@@ -1,0 +1,32 @@
+name: Push Release Summary to GitBook
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  update-gitbook-summary:
+    if: github.event.release.prerelease == false && !contains(github.event.release.tag_name, '-rc')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Clone GitBook synced repo
+        run: |
+          git clone https://github.com/deshmukhpranali/hiero-mirror-node.git gitbook-repo
+          cd gitbook-repo
+
+          # Make sure folder exists
+          mkdir -p networks/release-notes/mirror-node
+
+          # Create release summary file
+          echo "# ${{ github.event.release.name }}" > networks/release-notes/mirror-node/${{ github.event.release.tag_name }}.md
+          echo "" >> networks/release-notes/mirror-node/${{ github.event.release.tag_name }}.md
+          echo "${{ github.event.release.body }}" >> networks/release-notes/mirror-node/${{ github.event.release.tag_name }}.md
+
+          # Git commit and push
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .
+          git commit -m "Add release summary for ${{ github.event.release.tag_name }}"
+          git push
+
